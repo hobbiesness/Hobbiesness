@@ -1,0 +1,120 @@
+#!/bin/sh
+
+JAVA_OPTIONS="-Dsolr.solr.home=/opt/bitnami/apache-solr/solr $JAVA_OPTIONS"
+JETTY_HOME=/opt/bitnami/apache-solr
+JETTY_USER=solr
+JETTY_LOGS=/opt/bitnami/apache-solr/logs
+JETTY_CONFIG="etc/jetty-logging.xml etc/jetty.xml"
+
+SOLR_HOME=/opt/bitnami/apache-solr
+SOLR_BINARY=/opt/bitnami/apache-solr/start.jar
+SOLR_PID=/opt/bitnami/apache-solr/solr.pid
+export SOLR_PID
+SOLR_STATUS=""
+ERROR=0
+PID=""
+
+cd $SOLR_HOME
+
+start_solr() {
+    is_solr_running
+    RUNNING=$?
+    if [ $RUNNING -eq 1 ]; then
+        echo "$0 $ARG: solr (pid $PID) already running"
+    else
+	rm -f $SOLR_PID
+	java -jar $SOLR_BINARY $JETTY_CONFIG &
+	if [ $? -eq 0 ];  then
+            echo "$0 $ARG: solr started"
+            echo $! > $SOLR_PID
+	else
+            echo "$0 $ARG: solr could not be started"
+            ERROR=1
+	fi
+    fi
+}
+
+stop_solr() {
+    is_solr_running
+    RUNNING=$?
+    if [ $RUNNING -eq 0 ]; then
+        echo "$0 $ARG: $SOLR_STATUS"
+        exit
+    fi
+    kill -15 $PID
+    sleep 2
+    is_solr_running
+    RUNNING=$?
+    COUNTER=4
+    while [ $RUNNING -ne 0 ] && [ $COUNTER -ne 0 ]; do
+        COUNTER=`expr $COUNTER - 1`
+        sleep 2
+        is_solr_running
+        RUNNING=$?
+    done
+    if [ $RUNNING -eq 0 ]; then
+        echo "$0 $ARG: solr stopped"
+        rm -f $SOLR_PID
+        sleep 3
+    else
+        echo "$0 $ARG: solr could not be stopped"
+        ERROR=2
+    fi
+}
+
+get_pid() {
+    PID=""
+    PIDFILE=$1
+    # check for pidfile
+    if [ -f $PIDFILE ] ; then
+        PID=`cat $PIDFILE`
+    fi
+}
+
+get_solr_pid() {
+    get_pid $SOLR_PID
+    if [ ! $PID ]; then
+        return
+    fi
+}
+
+is_service_running() {
+    PID=$1
+    if [ "x$PID" != "x" ] && kill -0 $PID 2>/dev/null ; then
+        RUNNING=1
+    else
+        RUNNING=0
+    fi
+    return $RUNNING
+}
+
+is_solr_running() {
+    get_solr_pid
+    is_service_running $PID
+    RUNNING=$?
+    if [ $RUNNING -eq 0 ]; then
+        SOLR_STATUS="solr not running"
+    else
+        SOLR_STATUS="solr already running"
+    fi
+    return $RUNNING
+}
+
+cleanpid() {
+    rm -f $SOLR_PID
+}
+
+if [ "x$1" = "xstart" ]; then
+    start_solr
+    sleep 2
+elif [ "x$1" = "xstop" ]; then
+    stop_solr
+    sleep 2
+elif [ "x$1" = "xstatus" ]; then
+    is_solr_running
+    echo $SOLR_STATUS
+elif [ "x$1" = "xcleanpid" ]; then
+    cleanpid
+fi
+
+exit $ERROR
