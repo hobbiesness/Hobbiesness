@@ -20,6 +20,7 @@ HYPERSONIC_SCRIPT=$INSTALLDIR/hypersonic/scripts/ctl.sh
 TOMCAT_SCRIPT=$INSTALLDIR/apache-tomcat/scripts/ctl.sh
 SLING_SCRIPT=$INSTALLDIR/apache-sling/ctl.sh
 SOLR_SCRIPT=$INSTALLDIR/apache-solr/ctl.sh
+EXIST_SCRIPT=$INSTALLDIR/eXist/ctl.sh
 RESIN_SCRIPT=$INSTALLDIR/resin/scripts/ctl.sh
 SUBVERSION_SCRIPT=$INSTALLDIR/subversion/scripts/ctl.sh
 OPENOFFICE_SCRIPT=$INSTALLDIR/openoffice/scripts/ctl.sh
@@ -63,6 +64,9 @@ help() {
 	fi
 	if test -x $SOLR_SCRIPT; then	
 	    echo "       $0 (start|stop|restart|status) solr"
+	fi
+	if test -x $EXIST_SCRIPT; then	
+	    echo "       $0 (start|stop|restart|status) eXist"
 	fi
 	if test -x $RESIN_SCRIPT; then	
 	    echo "       $0 (start|stop|restart|status) resin"
@@ -155,6 +159,11 @@ elif [ "x$1" = "xstart" ]; then
         if test -x $SOLR_SCRIPT; then
             sudo -u solr $SOLR_SCRIPT start  
             SOLR_ERROR=$?
+        fi
+    elif [ "x$2" = "xeXist" ]; then
+        if test -x $EXIST_SCRIPT; then
+            sudo -u exist $EXIST_SCRIPT start  
+            EXIST_ERROR=$?
         fi
     elif [ "x$2" = "xjboss" ]; then
         if test -x $JBOSS_SCRIPT; then
@@ -252,6 +261,11 @@ elif [ "x$1" = "xstart" ]; then
         if test -x $SOLR_SCRIPT; then
             sudo -u solr $SOLR_SCRIPT start  
             SOLR_ERROR=$?
+        fi
+
+        if test -x $EXIST_SCRIPT; then
+            sudo -u exist $EXIST_SCRIPT start  
+            EXIST_ERROR=$?
         fi
 
         if test -x $JBOSS_SCRIPT; then
@@ -354,6 +368,11 @@ elif [ "x$1" = "xstop" ]; then
         if test -x $SOLR_SCRIPT; then
             sudo -u solr $SOLR_SCRIPT stop
             SOLR_ERROR=$?
+        fi
+    elif [ "x$2" = "xeXist" ]; then
+        if test -x $EXIST_SCRIPT; then
+            sudo -u exist $EXIST_SCRIPT stop
+            EXIST_ERROR=$?
         fi
     elif [ "x$2" = "xresin" ]; then
         if test -x $RESIN_SCRIPT; then
@@ -464,6 +483,11 @@ elif [ "x$1" = "xstop" ]; then
             SOLR_ERROR=$?
             sleep 3
         fi
+        if test -x $EXIST_SCRIPT; then
+            sudo -u exist $EXIST_SCRIPT stop
+            EXIST_ERROR=$?
+            sleep 3
+        fi
         if test -x $RESIN_SCRIPT; then
             $RESIN_SCRIPT stop
             RESIN_ERROR=$?
@@ -555,6 +579,13 @@ elif [ "x$1" = "xrestart" ]; then
             sleep 5
             sudo -u solr $SOLR_SCRIPT start
             SOLR_ERROR=$?
+        fi
+    elif [ "x$2" = "xeXist" ]; then
+        if test -x $EXIST_SCRIPT; then
+            sudo -u exist $EXIST_SCRIPT stop
+            sleep 5
+            sudo -u exist $EXIST_SCRIPT start
+            EXIST_ERROR=$?
         fi
     elif [ "x$2" = "xresin" ]; then
         if test -x $RESIN_SCRIPT; then
@@ -678,6 +709,10 @@ elif [ "x$1" = "xrestart" ]; then
             sudo -u solr $SOLR_SCRIPT stop
             SOLR_ERROR=$?
         fi
+        if test -x $EXIST_SCRIPT; then
+            sudo -u exist $EXIST_SCRIPT stop
+            EXIST_ERROR=$?
+        fi
         if test -x $RESIN_SCRIPT; then
             $RESIN_SCRIPT stop
             RESIN_ERROR=$?
@@ -730,6 +765,10 @@ elif [ "x$1" = "xrestart" ]; then
         if test -x $SOLR_SCRIPT; then
             sudo -u solr $SOLR_SCRIPT start
             SOLR_ERROR=$?
+        fi
+        if test -x $EXIST_SCRIPT; then
+            sudo -u exist $EXIST_SCRIPT start
+            EXIST_ERROR=$?
         fi
         if test -x $JBOSS_SCRIPT; then
             $JBOSS_SCRIPT start
@@ -813,6 +852,10 @@ elif [ "x$1" = "xstatus" ]; then
     elif [ "x$2" = "xsolr" ]; then
         if test -x $SOLR_SCRIPT; then
             sudo -u solr $SOLR_SCRIPT status
+        fi
+    elif [ "x$2" = "xeXist" ]; then
+        if test -x $EXIST_SCRIPT; then
+            sudo -u exist $EXIST_SCRIPT status
         fi
     elif [ "x$2" = "xresin" ]; then
         if test -x $RESIN_SCRIPT; then
@@ -902,6 +945,10 @@ elif [ "x$1" = "xstatus" ]; then
             sudo -u solr $SOLR_SCRIPT status
             sleep 3
         fi
+        if test -x $EXIST_SCRIPT; then
+            sudo -u exist $EXIST_SCRIPT status
+            sleep 3
+        fi
         if test -x $RESIN_SCRIPT; then
             $RESIN_SCRIPT status
             sleep 3
@@ -949,6 +996,9 @@ elif [ "x$1" = "xcleanpid" ]; then
     if test -x $SOLR_SCRIPT; then
         sudo -u solr $SOLR_SCRIPT cleanpid
     fi
+    if test -x $EXIST_SCRIPT; then
+        sudo -u exist $EXIST_SCRIPT cleanpid
+    fi
     if test -x $MYSQL_SCRIPT; then
         $MYSQL_SCRIPT cleanpid
     fi
@@ -964,7 +1014,7 @@ else
 fi
 
 # Checking for errors
-for e in $APACHE_ERROR $MYSQL_ERROR $SUBVERSION_ERROR $TOMCAT_ERROR $SLING_ERROR $SOLR_ERROR $RESIN_ERROR $MEMCACHED_ERROR $INGRES_ERROR $OPENOFFICE_ERROR $LUCENE_ERROR $ZOPE_ERROR $POSTGRESQL_ERROR $THIRD_ERROR $NAGIOS_ERROR $RABBITMQ_ERROR $JETTY_ERROR $JBOSS_ERROR $HYPERSONIC_ERROR; do
+for e in $APACHE_ERROR $MYSQL_ERROR $SUBVERSION_ERROR $TOMCAT_ERROR $SLING_ERROR $SOLR_ERROR $EXIST_ERROR $RESIN_ERROR $MEMCACHED_ERROR $INGRES_ERROR $OPENOFFICE_ERROR $LUCENE_ERROR $ZOPE_ERROR $POSTGRESQL_ERROR $THIRD_ERROR $NAGIOS_ERROR $RABBITMQ_ERROR $JETTY_ERROR $JBOSS_ERROR $HYPERSONIC_ERROR; do
     if [ $e -gt 0 ]; then
         ERROR=$e
     fi

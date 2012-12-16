@@ -1,0 +1,115 @@
+#!/bin/sh
+
+EXIST_HOME=/opt/bitnami/eXist
+EXIST_BINDIR=/opt/bitnami/eXist/bin
+EXIST_PID=/opt/bitnami/eXist/eXist.pid
+export EXIST_PID
+EXIST_STATUS=""
+ERROR=0
+PID=""
+PASSWORD=""
+
+cd $EXIST_HOME
+
+start_eXist() {
+    is_eXist_running
+    RUNNING=$?
+    if [ $RUNNING -eq 1 ]; then
+        echo "$0 $ARG: eXist (pid $PID) already running"
+    else
+	rm -f $EXIST_PID
+	$EXIST_BINDIR/startup.sh &
+	if [ $? -eq 0 ];  then
+            echo "$0 $ARG: eXist started"
+            echo $! > $EXIST_PID
+	else
+            echo "$0 $ARG: eXist could not be started"
+            ERROR=1
+	fi
+    fi
+}
+
+stop_eXist() {
+    is_eXist_running
+    RUNNING=$?
+    if [ $RUNNING -eq 0 ]; then
+        echo "$0 $ARG: $EXIST_STATUS"
+        exit
+    fi
+    $EXIST_BINDIR/shutdown.sh -u admin -p $PASSWORD
+    sleep 2
+    is_eXist_running
+    RUNNING=$?
+    COUNTER=4
+    while [ $RUNNING -ne 0 ] && [ $COUNTER -ne 0 ]; do
+        COUNTER=`expr $COUNTER - 1`
+        sleep 2
+        is_eXist_running
+        RUNNING=$?
+    done
+    if [ $RUNNING -eq 0 ]; then
+        echo "$0 $ARG: eXist stopped"
+        rm -f $EXIST_PID
+        sleep 3
+    else
+        echo "$0 $ARG: eXist could not be stopped"
+        ERROR=2
+    fi
+}
+
+get_pid() {
+    PID=""
+    PIDFILE=$1
+    # check for pidfile
+    if [ -f $PIDFILE ] ; then
+        PID=`cat $PIDFILE`
+    fi
+}
+
+get_eXist_pid() {
+    get_pid $EXIST_PID
+    if [ ! $PID ]; then
+        return
+    fi
+}
+
+is_service_running() {
+    PID=$1
+    if [ "x$PID" != "x" ] && kill -0 $PID 2>/dev/null ; then
+        RUNNING=1
+    else
+        RUNNING=0
+    fi
+    return $RUNNING
+}
+
+is_eXist_running() {
+    get_eXist_pid
+    is_service_running $PID
+    RUNNING=$?
+    if [ $RUNNING -eq 0 ]; then
+        EXIST_STATUS="eXist not running"
+    else
+        EXIST_STATUS="eXist already running"
+    fi
+    return $RUNNING
+}
+
+cleanpid() {
+    rm -f $EXIST_PID
+}
+
+if [ "x$1" = "xstart" ]; then
+    start_eXist
+    sleep 2
+elif [ "x$1" = "xstop" ]; then
+    stop_eXist
+    sleep 2
+elif [ "x$1" = "xstatus" ]; then
+    is_eXist_running
+    echo $EXIST_STATUS
+elif [ "x$1" = "xcleanpid" ]; then
+    cleanpid
+fi
+
+exit $ERROR
